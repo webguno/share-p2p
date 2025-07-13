@@ -188,6 +188,19 @@ class P2PFileShare {
             });
         }
         
+        // Additional close button handling with direct assignment
+        setTimeout(() => {
+            const closeBtn = document.getElementById('close-scanner');
+            if (closeBtn) {
+                closeBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Direct onclick handler triggered');
+                    this.closeQRScanner();
+                };
+            }
+        }, 100);
+        
         // Listen for storage changes (for peer coordination)
         window.addEventListener('storage', (e) => this.handleStorageChange(e));
         
@@ -645,6 +658,11 @@ class P2PFileShare {
     }
 
     acceptFile() {
+        if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
+            this.showError('Connection not established. Please try connecting again.');
+            return;
+        }
+        
         this.downloadInfo.classList.add('hidden');
         this.downloadProgress.classList.remove('hidden');
         
@@ -659,9 +677,11 @@ class P2PFileShare {
     }
 
     rejectFile() {
-        this.dataChannel.send(JSON.stringify({
-            type: 'file_rejected'
-        }));
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+            this.dataChannel.send(JSON.stringify({
+                type: 'file_rejected'
+            }));
+        }
         this.reset();
     }
 
@@ -909,11 +929,20 @@ class P2PFileShare {
     // QR Scanner Functions
     async openQRScanner() {
         try {
+            console.log('Opening QR scanner...');
             await this.initializeCamera();
             this.qrScanner.classList.remove('hidden');
+            
+            // Hide the code input section when scanner is open
+            const codeInputSection = document.querySelector('.code-input-section');
+            if (codeInputSection) {
+                codeInputSection.classList.add('hidden');
+            }
+            
             this.scannerActive = true;
             this.startQRScanning();
         } catch (error) {
+            console.error('Camera error:', error);
             this.showError('Camera access denied or not available');
         }
     }
@@ -923,8 +952,18 @@ class P2PFileShare {
         this.scannerActive = false;
         this.qrScanner.classList.add('hidden');
         this.stopCamera();
-        this.scannerStatusText.style.color = '#00ff00';
-        this.scannerStatusText.textContent = 'Looking for QR code...';
+        
+        // Show the code input section again
+        const codeInputSection = document.querySelector('.code-input-section');
+        if (codeInputSection) {
+            codeInputSection.classList.remove('hidden');
+        }
+        
+        // Reset scanner status
+        if (this.scannerStatusText) {
+            this.scannerStatusText.style.color = '#00ff00';
+            this.scannerStatusText.textContent = 'Looking for QR code...';
+        }
     }
 
     async initializeCamera() {

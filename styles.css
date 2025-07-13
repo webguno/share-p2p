@@ -1021,6 +1021,8 @@ body {
     background: rgba(0, 0, 0, 0.8);
     color: white;
     backdrop-filter: blur(10px);
+    z-index: 1001;
+    position: relative;
 }
 
 .scanner-header h3 {
@@ -1041,6 +1043,9 @@ body {
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    z-index: 1002;
+    position: relative;
+    font-size: 16px;
 }
 
 .close-scanner-btn:hover,
