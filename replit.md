@@ -1,20 +1,25 @@
-# P2P File Share
+# FileSync - P2P File Share
 
 ## Overview
 
-This is a peer-to-peer file sharing web application that enables direct file transfer between devices without requiring a central server. The application uses WebRTC technology to establish direct connections between browsers, allowing users to share files securely and efficiently.
+FileSync is a modern, mobile-first peer-to-peer file sharing web application that enables direct file transfer between devices without requiring a central server. The application uses WebRTC technology to establish direct connections between browsers, allowing users to share files securely and efficiently with an intuitive mobile app interface.
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language.
+- Preferred communication style: Simple, everyday language
+- Design preference: Mobile app layout with Font Awesome icons and advanced animations
+- UX requirements: Feels like a native mobile application
 
 ## System Architecture
 
 ### Frontend Architecture
 - **Pure Web Technologies**: Built using vanilla HTML, CSS, and JavaScript without any frameworks
 - **Progressive Web App (PWA)**: Includes service worker for offline functionality and web app manifest for installation
+- **Mobile App Design**: Native mobile app interface with iPhone-style layout (max-width: 428px)
+- **Font Awesome Icons**: Complete icon system using Font Awesome 6.5.1 for modern UI elements
+- **Advanced Animations**: CSS keyframe animations, transitions, and loading states for enhanced UX
 - **WebRTC Implementation**: Uses native WebRTC APIs for peer-to-peer connections and data channels
-- **Responsive Design**: Mobile-first approach with CSS Grid and Flexbox for layout
+- **Responsive Design**: Mobile-first approach with CSS Grid and Flexbox, supporting dynamic viewport heights
 
 ### Backend Architecture
 - **Serverless**: No traditional backend server required
@@ -35,9 +40,13 @@ Preferred communication style: Simple, everyday language.
 - **Offline Support**: Serves cached content when network is unavailable
 
 ### 3. User Interface (`index.html`, `styles.css`)
-- **Mode-Based UI**: Separate interfaces for sending and receiving files
-- **Real-time Feedback**: Connection status, transfer progress, peer count
-- **Mobile-Optimized**: Responsive design with touch-friendly interactions
+- **Mobile App Layout**: iPhone-style container with status bar, header, main content, and bottom navigation
+- **Mode-Based UI**: Card-style interfaces for sending and receiving files with smooth transitions
+- **Advanced Animations**: Shimmer effects, pulse loaders, progress animations, and slide-in transitions
+- **Touch-Optimized**: Large touch targets, haptic feedback simulation, and gesture-friendly interactions
+- **Icon System**: Font Awesome icons for all UI elements with contextual file type indicators
+- **Status Indicators**: Real-time connection dots, animated loading states, and progress tracking
+- **Notification System**: Toast-style notifications with slide animations and auto-dismiss
 
 ## Data Flow
 

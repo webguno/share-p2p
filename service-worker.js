@@ -1,4 +1,4 @@
-const CACHE_NAME = 'p2p-file-share-v1';
+const CACHE_NAME = 'p2p-file-share-v2';
 const urlsToCache = [
     '/',
     '/index.html',
