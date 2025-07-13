@@ -17,6 +17,10 @@ class P2PFileShare {
         
         this.initializeElements();
         this.attachEventListeners();
+        
+        // Initialize UI state
+        this.initializeUIState();
+        
         this.initializeServiceWorker();
         this.generateManifest();
     }
@@ -99,6 +103,14 @@ class P2PFileShare {
         this.qrCanvasScanner = document.getElementById('qr-canvas-scanner');
         this.scannerStatusText = document.getElementById('scanner-status-text');
         
+        // Debug: Log if elements are found
+        console.log('QR Scanner elements:', {
+            scanQrBtn: !!this.scanQrBtn,
+            qrScanner: !!this.qrScanner,
+            closeScannerBtn: !!this.closeScannerBtn,
+            toggleCameraBtn: !!this.toggleCameraBtn
+        });
+        
         // Scanner state
         this.currentStream = null;
         this.cameras = [];
@@ -148,11 +160,58 @@ class P2PFileShare {
         
         // QR Scanner
         this.scanQrBtn.addEventListener('click', () => this.openQRScanner());
-        this.closeScannerBtn.addEventListener('click', () => this.closeQRScanner());
-        this.toggleCameraBtn.addEventListener('click', () => this.toggleCamera());
+        if (this.closeScannerBtn) {
+            this.closeScannerBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Close scanner button clicked');
+                this.closeQRScanner();
+            });
+        } else {
+            console.error('Close scanner button not found');
+        }
+        
+        if (this.toggleCameraBtn) {
+            this.toggleCameraBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleCamera();
+            });
+        }
+        
+        // Additional scanner close handlers
+        if (this.qrScanner) {
+            this.qrScanner.addEventListener('click', (e) => {
+                if (e.target === this.qrScanner) {
+                    this.closeQRScanner();
+                }
+            });
+        }
         
         // Listen for storage changes (for peer coordination)
         window.addEventListener('storage', (e) => this.handleStorageChange(e));
+        
+        // Keyboard shortcuts
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !this.qrScanner.classList.contains('hidden')) {
+                this.closeQRScanner();
+            }
+        });
+    }
+
+    initializeUIState() {
+        // Hide all progress elements initially
+        this.fileInfo.classList.add('hidden');
+        this.shareInfo.classList.add('hidden');
+        this.transferProgress.classList.add('hidden');
+        this.connectionInfo.classList.add('hidden');
+        this.downloadInfo.classList.add('hidden');
+        this.downloadProgress.classList.add('hidden');
+        this.qrScanner.classList.add('hidden');
+        
+        // Start with send mode
+        this.showSendMode();
+        this.updateConnectionStatus('ready');
     }
 
     showSendMode() {
@@ -161,6 +220,11 @@ class P2PFileShare {
         this.sendMode.classList.remove('hidden');
         this.receiveMode.classList.add('hidden');
         this.isHost = true;
+        
+        // Hide progress elements initially
+        this.transferProgress.classList.add('hidden');
+        this.connectionInfo.classList.add('hidden');
+        
         this.updateConnectionStatus('ready');
     }
 
@@ -170,6 +234,19 @@ class P2PFileShare {
         this.receiveMode.classList.remove('hidden');
         this.sendMode.classList.add('hidden');
         this.isHost = false;
+        
+        // Hide progress elements and scanner initially
+        this.downloadInfo.classList.add('hidden');
+        this.downloadProgress.classList.add('hidden');
+        this.connectionInfo.classList.add('hidden');
+        this.qrScanner.classList.add('hidden');
+        
+        // Make sure code input is visible
+        const codeInputSection = document.querySelector('.code-input-section');
+        if (codeInputSection) {
+            codeInputSection.classList.remove('hidden');
+        }
+        
         this.updateConnectionStatus('ready');
     }
 
@@ -216,7 +293,10 @@ class P2PFileShare {
         this.fileData = null;
         this.fileInfo.classList.add('hidden');
         this.shareInfo.classList.add('hidden');
+        this.transferProgress.classList.add('hidden');
+        this.connectionInfo.classList.add('hidden');
         this.fileInput.value = '';
+        this.shareCode = null;
         this.showSuccess('File removed');
     }
 
@@ -839,9 +919,12 @@ class P2PFileShare {
     }
 
     closeQRScanner() {
+        console.log('Closing QR scanner...');
         this.scannerActive = false;
         this.qrScanner.classList.add('hidden');
         this.stopCamera();
+        this.scannerStatusText.style.color = '#00ff00';
+        this.scannerStatusText.textContent = 'Looking for QR code...';
     }
 
     async initializeCamera() {
