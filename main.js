@@ -17,10 +17,6 @@ class P2PFileShare {
         
         this.initializeElements();
         this.attachEventListeners();
-        
-        // Initialize UI state
-        this.initializeUIState();
-        
         this.initializeServiceWorker();
         this.generateManifest();
     }
@@ -44,7 +40,6 @@ class P2PFileShare {
         this.fileName = document.getElementById('file-name');
         this.fileSize = document.getElementById('file-size');
         this.generateCodeBtn = document.getElementById('generate-code-btn');
-        this.removeFileBtn = document.getElementById('remove-file');
         
         // Share info
         this.shareInfo = document.getElementById('share-info');
@@ -63,7 +58,6 @@ class P2PFileShare {
         this.connectBtn = document.getElementById('connect-btn');
         this.connectionInfo = document.getElementById('connection-info');
         this.connectionMessage = document.getElementById('connection-message');
-        this.codeValid = document.getElementById('code-valid');
         
         // Download info
         this.downloadInfo = document.getElementById('download-info');
@@ -78,44 +72,20 @@ class P2PFileShare {
         this.downloadPercentage = document.getElementById('download-percentage');
         this.downloadSpeed = document.getElementById('download-speed');
         
-        // Notifications
-        this.errorNotification = document.getElementById('error-notification');
+        // Messages
+        this.errorMessage = document.getElementById('error-message');
         this.errorText = document.getElementById('error-text');
         this.closeError = document.getElementById('close-error');
-        this.successNotification = document.getElementById('success-notification');
+        this.successMessage = document.getElementById('success-message');
         this.successText = document.getElementById('success-text');
         this.closeSuccess = document.getElementById('close-success');
         
         // Status
         this.connectionStatus = document.getElementById('connection-status');
-        this.connectionDot = document.getElementById('connection-dot');
         this.peerCount = document.getElementById('peer-count');
         
         // Reset
         this.resetBtn = document.getElementById('reset-btn');
-        
-        // QR Scanner
-        this.scanQrBtn = document.getElementById('scan-qr-btn');
-        this.qrScanner = document.getElementById('qr-scanner');
-        this.closeScannerBtn = document.getElementById('close-scanner');
-        this.toggleCameraBtn = document.getElementById('toggle-camera');
-        this.qrVideo = document.getElementById('qr-video');
-        this.qrCanvasScanner = document.getElementById('qr-canvas-scanner');
-        this.scannerStatusText = document.getElementById('scanner-status-text');
-        
-        // Debug: Log if elements are found
-        console.log('QR Scanner elements:', {
-            scanQrBtn: !!this.scanQrBtn,
-            qrScanner: !!this.qrScanner,
-            closeScannerBtn: !!this.closeScannerBtn,
-            toggleCameraBtn: !!this.toggleCameraBtn
-        });
-        
-        // Scanner state
-        this.currentStream = null;
-        this.cameras = [];
-        this.currentCameraIndex = 0;
-        this.scannerActive = false;
     }
 
     attachEventListeners() {
@@ -126,11 +96,6 @@ class P2PFileShare {
         // File selection
         this.fileSelectBtn.addEventListener('click', () => this.fileInput.click());
         this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e.target.files[0]));
-        
-        // Remove file
-        if (this.removeFileBtn) {
-            this.removeFileBtn.addEventListener('click', () => this.removeFile());
-        }
         
         // Drag and drop
         this.dropZone.addEventListener('dragover', (e) => this.handleDragOver(e));
@@ -151,116 +116,31 @@ class P2PFileShare {
         this.acceptFileBtn.addEventListener('click', () => this.acceptFile());
         this.rejectFileBtn.addEventListener('click', () => this.rejectFile());
         
-        // Notifications
+        // Messages
         this.closeError.addEventListener('click', () => this.hideError());
         this.closeSuccess.addEventListener('click', () => this.hideSuccess());
         
         // Reset
         this.resetBtn.addEventListener('click', () => this.reset());
         
-        // QR Scanner
-        this.scanQrBtn.addEventListener('click', () => this.openQRScanner());
-        if (this.closeScannerBtn) {
-            this.closeScannerBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Close scanner button clicked');
-                this.closeQRScanner();
-            });
-        } else {
-            console.error('Close scanner button not found');
-        }
-        
-        if (this.toggleCameraBtn) {
-            this.toggleCameraBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.toggleCamera();
-            });
-        }
-        
-        // Additional scanner close handlers
-        if (this.qrScanner) {
-            this.qrScanner.addEventListener('click', (e) => {
-                if (e.target === this.qrScanner) {
-                    this.closeQRScanner();
-                }
-            });
-        }
-        
-        // Additional close button handling with direct assignment
-        setTimeout(() => {
-            const closeBtn = document.getElementById('close-scanner');
-            if (closeBtn) {
-                closeBtn.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('Direct onclick handler triggered');
-                    this.closeQRScanner();
-                };
-            }
-        }, 100);
-        
         // Listen for storage changes (for peer coordination)
         window.addEventListener('storage', (e) => this.handleStorageChange(e));
-        
-        // Keyboard shortcuts
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !this.qrScanner.classList.contains('hidden')) {
-                this.closeQRScanner();
-            }
-        });
-    }
-
-    initializeUIState() {
-        // Hide all progress elements initially
-        this.fileInfo.classList.add('hidden');
-        this.shareInfo.classList.add('hidden');
-        this.transferProgress.classList.add('hidden');
-        this.connectionInfo.classList.add('hidden');
-        this.downloadInfo.classList.add('hidden');
-        this.downloadProgress.classList.add('hidden');
-        this.qrScanner.classList.add('hidden');
-        
-        // Start with send mode
-        this.showSendMode();
-        this.updateConnectionStatus('ready');
     }
 
     showSendMode() {
-        this.sendModeBtn.classList.add('active');
-        this.receiveModeBtn.classList.remove('active');
+        this.sendModeBtn.classList.add('primary');
+        this.receiveModeBtn.classList.remove('primary');
         this.sendMode.classList.remove('hidden');
         this.receiveMode.classList.add('hidden');
         this.isHost = true;
-        
-        // Hide progress elements initially
-        this.transferProgress.classList.add('hidden');
-        this.connectionInfo.classList.add('hidden');
-        
-        this.updateConnectionStatus('ready');
     }
 
     showReceiveMode() {
-        this.receiveModeBtn.classList.add('active');
-        this.sendModeBtn.classList.remove('active');
+        this.receiveModeBtn.classList.add('primary');
+        this.sendModeBtn.classList.remove('primary');
         this.receiveMode.classList.remove('hidden');
         this.sendMode.classList.add('hidden');
         this.isHost = false;
-        
-        // Hide progress elements and scanner initially
-        this.downloadInfo.classList.add('hidden');
-        this.downloadProgress.classList.add('hidden');
-        this.connectionInfo.classList.add('hidden');
-        this.qrScanner.classList.add('hidden');
-        
-        // Make sure code input is visible
-        const codeInputSection = document.querySelector('.code-input-section');
-        if (codeInputSection) {
-            codeInputSection.classList.remove('hidden');
-        }
-        
-        this.updateConnectionStatus('ready');
     }
 
     handleFileSelect(file) {
@@ -271,46 +151,12 @@ class P2PFileShare {
         this.fileSize.textContent = this.formatFileSize(file.size);
         this.fileInfo.classList.remove('hidden');
         
-        // Update file icon based on type
-        this.updateFileIcon(file);
-        
         // Read file data
         const reader = new FileReader();
         reader.onload = (e) => {
             this.fileData = e.target.result;
         };
         reader.readAsArrayBuffer(file);
-        
-        this.showSuccess('File selected successfully');
-    }
-
-    updateFileIcon(file) {
-        const fileIcon = document.querySelector('.file-icon');
-        if (!fileIcon) return;
-        
-        const type = file.type;
-        let iconClass = 'fas fa-file-alt';
-        
-        if (type.startsWith('image/')) iconClass = 'fas fa-file-image';
-        else if (type.startsWith('video/')) iconClass = 'fas fa-file-video';
-        else if (type.startsWith('audio/')) iconClass = 'fas fa-file-audio';
-        else if (type.includes('pdf')) iconClass = 'fas fa-file-pdf';
-        else if (type.includes('zip') || type.includes('archive')) iconClass = 'fas fa-file-archive';
-        else if (type.includes('text') || type.includes('code')) iconClass = 'fas fa-file-code';
-        
-        fileIcon.className = `file-icon ${iconClass}`;
-    }
-
-    removeFile() {
-        this.currentFile = null;
-        this.fileData = null;
-        this.fileInfo.classList.add('hidden');
-        this.shareInfo.classList.add('hidden');
-        this.transferProgress.classList.add('hidden');
-        this.connectionInfo.classList.add('hidden');
-        this.fileInput.value = '';
-        this.shareCode = null;
-        this.showSuccess('File removed');
     }
 
     handleDragOver(e) {
@@ -361,7 +207,7 @@ class P2PFileShare {
         const canvas = this.qrCanvas;
         const ctx = canvas.getContext('2d');
         
-        // QR code size
+        // Simple QR-like code visualization
         const size = 160;
         canvas.width = size;
         canvas.height = size;
@@ -370,100 +216,27 @@ class P2PFileShare {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, size, size);
         
-        // Generate QR code data (simplified version)
-        // In a real implementation, you'd use qrcode.js library
-        this.generateSimpleQRPattern(ctx, this.shareCode, size);
-        
-        // Store QR data for scanning
-        localStorage.setItem('qr_code_' + this.shareCode, JSON.stringify({
-            code: this.shareCode,
-            timestamp: Date.now(),
-            url: window.location.href
-        }));
-    }
-
-    generateSimpleQRPattern(ctx, data, size) {
-        const moduleSize = Math.floor(size / 25); // 25x25 grid
-        const modules = this.createQRMatrix(data, 25);
-        
+        // Create a simple pattern based on the share code
         ctx.fillStyle = '#000000';
+        const codeStr = this.shareCode + window.location.href;
         
-        for (let row = 0; row < modules.length; row++) {
-            for (let col = 0; col < modules[row].length; col++) {
-                if (modules[row][col]) {
-                    ctx.fillRect(
-                        col * moduleSize,
-                        row * moduleSize,
-                        moduleSize,
-                        moduleSize
-                    );
-                }
-            }
+        for (let i = 0; i < codeStr.length; i++) {
+            const char = codeStr.charCodeAt(i);
+            const x = (char * 7) % (size - 8);
+            const y = (char * 11) % (size - 8);
+            ctx.fillRect(x, y, 8, 8);
         }
         
-        // Add positioning markers (corners)
-        this.drawPositioningMarker(ctx, 0, 0, moduleSize);
-        this.drawPositioningMarker(ctx, 18 * moduleSize, 0, moduleSize);
-        this.drawPositioningMarker(ctx, 0, 18 * moduleSize, moduleSize);
-    }
-
-    createQRMatrix(data, size) {
-        const matrix = Array(size).fill().map(() => Array(size).fill(false));
+        // Add border
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, size, size);
         
-        // Add positioning patterns
-        this.addPositioningPattern(matrix, 0, 0);
-        this.addPositioningPattern(matrix, size - 7, 0);
-        this.addPositioningPattern(matrix, 0, size - 7);
-        
-        // Add data pattern based on share code
-        const codeHash = this.hashCode(data);
-        for (let i = 8; i < size - 8; i++) {
-            for (let j = 8; j < size - 8; j++) {
-                matrix[i][j] = ((codeHash + i * j) % 3) === 0;
-            }
-        }
-        
-        return matrix;
-    }
-
-    addPositioningPattern(matrix, startRow, startCol) {
-        for (let i = 0; i < 7; i++) {
-            for (let j = 0; j < 7; j++) {
-                const row = startRow + i;
-                const col = startCol + j;
-                if (row < matrix.length && col < matrix[0].length) {
-                    matrix[row][col] = 
-                        (i === 0 || i === 6 || j === 0 || j === 6) ||
-                        (i >= 2 && i <= 4 && j >= 2 && j <= 4);
-                }
-            }
-        }
-    }
-
-    drawPositioningMarker(ctx, x, y, moduleSize) {
-        const markerSize = moduleSize * 7;
-        
-        // Outer border
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(x, y, markerSize, markerSize);
-        
-        // Inner white
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x + moduleSize, y + moduleSize, markerSize - 2 * moduleSize, markerSize - 2 * moduleSize);
-        
-        // Center dot
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(x + 2 * moduleSize, y + 2 * moduleSize, 3 * moduleSize, 3 * moduleSize);
-    }
-
-    hashCode(str) {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // Convert to 32bit integer
-        }
-        return Math.abs(hash);
+        // Add share code text below
+        ctx.fillStyle = '#667eea';
+        ctx.font = '14px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.shareCode, size / 2, size + 20);
     }
 
     copyShareCode() {
@@ -480,10 +253,8 @@ class P2PFileShare {
         
         if (value.length === 6) {
             this.connectBtn.disabled = false;
-            this.codeValid.parentElement.classList.add('valid');
         } else {
             this.connectBtn.disabled = true;
-            this.codeValid.parentElement.classList.remove('valid');
         }
     }
 
@@ -658,11 +429,6 @@ class P2PFileShare {
     }
 
     acceptFile() {
-        if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
-            this.showError('Connection not established. Please try connecting again.');
-            return;
-        }
-        
         this.downloadInfo.classList.add('hidden');
         this.downloadProgress.classList.remove('hidden');
         
@@ -677,11 +443,9 @@ class P2PFileShare {
     }
 
     rejectFile() {
-        if (this.dataChannel && this.dataChannel.readyState === 'open') {
-            this.dataChannel.send(JSON.stringify({
-                type: 'file_rejected'
-            }));
-        }
+        this.dataChannel.send(JSON.stringify({
+            type: 'file_rejected'
+        }));
         this.reset();
     }
 
@@ -826,19 +590,28 @@ class P2PFileShare {
     }
 
     updateConnectionStatus(status) {
-        const statusMap = {
-            'ready': { text: 'Ready', dotClass: '', peerCount: '0' },
-            'connecting': { text: 'Connecting', dotClass: 'connecting', peerCount: '0' },
-            'connected': { text: 'Connected', dotClass: 'connected', peerCount: '1' },
-            'disconnected': { text: 'Ready', dotClass: '', peerCount: '0' },
-            'failed': { text: 'Ready', dotClass: '', peerCount: '0' },
-            'closed': { text: 'Ready', dotClass: '', peerCount: '0' }
-        };
+        const statusElement = this.connectionStatus;
+        statusElement.className = 'status-indicator';
         
-        const statusInfo = statusMap[status] || statusMap.ready;
-        this.connectionStatus.textContent = statusInfo.text;
-        this.connectionDot.className = `fas fa-circle ${statusInfo.dotClass}`;
-        this.peerCount.textContent = statusInfo.peerCount;
+        switch (status) {
+            case 'connected':
+                statusElement.classList.add('online');
+                statusElement.textContent = 'Connected';
+                this.peerCount.textContent = '1 peer';
+                break;
+            case 'connecting':
+                statusElement.classList.add('connecting');
+                statusElement.textContent = 'Connecting';
+                this.peerCount.textContent = '0 peers';
+                break;
+            case 'disconnected':
+            case 'failed':
+            case 'closed':
+                statusElement.classList.add('offline');
+                statusElement.textContent = 'Offline';
+                this.peerCount.textContent = '0 peers';
+                break;
+        }
     }
 
     formatFileSize(bytes) {
@@ -855,22 +628,22 @@ class P2PFileShare {
 
     showError(message) {
         this.errorText.textContent = message;
-        this.errorNotification.classList.remove('hidden');
+        this.errorMessage.classList.remove('hidden');
         setTimeout(() => this.hideError(), 5000);
     }
 
     hideError() {
-        this.errorNotification.classList.add('hidden');
+        this.errorMessage.classList.add('hidden');
     }
 
     showSuccess(message) {
         this.successText.textContent = message;
-        this.successNotification.classList.remove('hidden');
+        this.successMessage.classList.remove('hidden');
         setTimeout(() => this.hideSuccess(), 3000);
     }
 
     hideSuccess() {
-        this.successNotification.classList.add('hidden');
+        this.successMessage.classList.add('hidden');
     }
 
     reset() {
@@ -924,182 +697,6 @@ class P2PFileShare {
         this.codeInput.value = '';
         
         this.updateConnectionStatus('disconnected');
-    }
-
-    // QR Scanner Functions
-    async openQRScanner() {
-        try {
-            console.log('Opening QR scanner...');
-            await this.initializeCamera();
-            this.qrScanner.classList.remove('hidden');
-            
-            // Hide the code input section when scanner is open
-            const codeInputSection = document.querySelector('.code-input-section');
-            if (codeInputSection) {
-                codeInputSection.classList.add('hidden');
-            }
-            
-            this.scannerActive = true;
-            this.startQRScanning();
-        } catch (error) {
-            console.error('Camera error:', error);
-            this.showError('Camera access denied or not available');
-        }
-    }
-
-    closeQRScanner() {
-        console.log('Closing QR scanner...');
-        this.scannerActive = false;
-        this.qrScanner.classList.add('hidden');
-        this.stopCamera();
-        
-        // Show the code input section again
-        const codeInputSection = document.querySelector('.code-input-section');
-        if (codeInputSection) {
-            codeInputSection.classList.remove('hidden');
-        }
-        
-        // Reset scanner status
-        if (this.scannerStatusText) {
-            this.scannerStatusText.style.color = '#00ff00';
-            this.scannerStatusText.textContent = 'Looking for QR code...';
-        }
-    }
-
-    async initializeCamera() {
-        // Get available cameras
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        this.cameras = devices.filter(device => device.kind === 'videoinput');
-        
-        if (this.cameras.length === 0) {
-            throw new Error('No cameras found');
-        }
-
-        // Start with back camera if available, otherwise use first camera
-        const preferredCamera = this.cameras.find(camera => 
-            camera.label.toLowerCase().includes('back') || 
-            camera.label.toLowerCase().includes('rear')
-        ) || this.cameras[0];
-        
-        this.currentCameraIndex = this.cameras.indexOf(preferredCamera);
-        await this.startCamera();
-    }
-
-    async startCamera() {
-        this.stopCamera(); // Stop any existing stream
-        
-        const constraints = {
-            video: {
-                deviceId: this.cameras[this.currentCameraIndex]?.deviceId,
-                facingMode: 'environment', // Prefer back camera
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            }
-        };
-
-        try {
-            this.currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-            this.qrVideo.srcObject = this.currentStream;
-            this.scannerStatusText.textContent = 'Looking for QR code...';
-        } catch (error) {
-            this.showError('Failed to access camera: ' + error.message);
-        }
-    }
-
-    stopCamera() {
-        if (this.currentStream) {
-            this.currentStream.getTracks().forEach(track => track.stop());
-            this.currentStream = null;
-        }
-    }
-
-    async toggleCamera() {
-        if (this.cameras.length > 1) {
-            this.currentCameraIndex = (this.currentCameraIndex + 1) % this.cameras.length;
-            await this.startCamera();
-        }
-    }
-
-    startQRScanning() {
-        const scanFrame = () => {
-            if (!this.scannerActive) return;
-
-            if (this.qrVideo.readyState === this.qrVideo.HAVE_ENOUGH_DATA) {
-                this.scanQRCode();
-            }
-
-            requestAnimationFrame(scanFrame);
-        };
-        scanFrame();
-    }
-
-    scanQRCode() {
-        const canvas = this.qrCanvasScanner;
-        const context = canvas.getContext('2d');
-        const video = this.qrVideo;
-
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        try {
-            // Simple QR code detection - look for share code pattern
-            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-            const code = this.detectQRCode(imageData);
-            
-            if (code && code.length === 6) {
-                this.onQRCodeDetected(code);
-            }
-        } catch (error) {
-            // Continue scanning silently
-        }
-    }
-
-    detectQRCode(imageData) {
-        // Basic QR code detection simulation
-        // In a real implementation, you'd use jsQR library: https://github.com/cozmo/jsQR
-        
-        // Check for stored QR codes that match current patterns
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('qr_code_')) {
-                try {
-                    const qrData = JSON.parse(localStorage.getItem(key));
-                    const code = qrData.code;
-                    
-                    // Check if the corresponding connection data exists
-                    const connectionKey = 'p2p_connection_' + code;
-                    if (localStorage.getItem(connectionKey) && code.length === 6) {
-                        // Simulate QR pattern recognition delay
-                        const currentTime = Date.now();
-                        if (currentTime - qrData.timestamp < 300000) { // 5 minutes timeout
-                            return code;
-                        }
-                    }
-                } catch (error) {
-                    // Invalid QR data, continue
-                }
-            }
-        }
-        
-        return null;
-    }
-
-    onQRCodeDetected(code) {
-        this.scannerStatusText.textContent = 'QR Code detected!';
-        this.scannerStatusText.style.color = '#00ff00';
-        
-        // Vibrate if supported
-        if (navigator.vibrate) {
-            navigator.vibrate(100);
-        }
-        
-        setTimeout(() => {
-            this.closeQRScanner();
-            this.codeInput.value = code;
-            this.handleCodeInput({ target: { value: code } });
-            this.showSuccess('QR code scanned successfully!');
-        }, 500);
     }
 
     initializeServiceWorker() {
